@@ -320,7 +320,3 @@ Tiny Shakespeare Dataset
 
 ---
 
-## Author
-
-Built by Karthik Unnikrishnan  
-Project: LOOM-GPT
