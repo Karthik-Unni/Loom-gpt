@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pth
+*.pt
+.ipynb_checkpoints/
+data/input.txt
+out/
+.DS_Store
