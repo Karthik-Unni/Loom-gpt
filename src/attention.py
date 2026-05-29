@@ -24,3 +24,15 @@ class Head(nn.Module):
         wei = self.dropout(wei)
         v = self.value(x)
         return wei @ v     # (B, T, head_size)  
+class MultiHeadAttention(nn.Module):
+        def __init__(self, n_heads: int, head_size: int, n_embd: int, block_size: int, dropout: float):
+            super().__init__()
+            self.heads   = nn.ModuleList([
+                Head(head_size, n_embd, block_size, dropout) for _ in range(n_heads)
+            ])
+            self.proj    = nn.Linear(n_embd, n_embd)
+            self.dropout = nn.Dropout(dropout)
+
+        def forward(self, x):
+            out = torch.cat([h(x) for h in self.heads], dim=-1)
+            return self.dropout(self.proj(out))
