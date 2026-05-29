@@ -1,322 +1,135 @@
-# 🧵 LOOM-GPT
-### Building GPT from Scratch — One Layer at a Time
+# 🧵 Loom-GPT
 
-> Weaving language from matrices, attention, and next-token prediction.
-
-A from-scratch implementation of GPT following Andrej Karpathy's  
-**"Let's Build GPT: from scratch, in code, spelled out"** — but built as an engineering project with incremental commits, experiments, notes, and upgrades.
+A GPT-style language model built from scratch in PyTorch by implementing the core components of the Transformer architecture step-by-step.
 
 ---
 
-## Current Progress → Commit 6 ✅
+## Features
 
-Progress:
-- [x] Project setup
-- [x] Tiny Shakespeare dataset
-- [x] Character-level tokenizer
-- [x] Dataset pipeline + batch sampling
-- [x] Bigram Language Model
-- [x] Bigram training loop
-- [x] Attention intuition (averaging trick)
-- [ ] Self-attention
-- [ ] Multi-head attention
-- [ ] Transformer block
-- [ ] Full GPT
-- [ ] Training + generation
-- [ ] Upgrades
+### Character-Level Tokenization
 
----
+Loom-GPT converts raw text into character tokens and learns language patterns directly from the data without relying on any pre-trained tokenizer. This helps illustrate the complete language modeling pipeline from the ground up.
 
-# What This Project Is
+### Self-Attention from Scratch
 
-LOOM-GPT is an attempt to understand GPT from first principles.
+The attention mechanism is implemented manually using Query, Key, and Value projections. This allows the model to learn which previous tokens are most relevant when predicting the next character.
 
-Instead of using APIs or pretrained models, this project builds every component manually:
+### Multi-Head Attention
 
-```text
-Raw Text
-↓
-Tokenizer
-↓
-Tokens
-↓
-Dataset
-↓
-Language Model
-↓
-Training
-↓
-Attention
-↓
-Transformer
-↓
-GPT
-```
+Multiple attention heads operate in parallel, enabling the model to capture different contextual relationships within the text. Their outputs are combined to build richer token representations.
 
-Current stage:
-We moved from predicting text using simple next-character statistics → toward learning contextual relationships using attention.
+### Transformer Architecture
+
+The model is built using stacked Transformer blocks consisting of multi-head self-attention, feed-forward networks, residual connections, and layer normalization, closely following modern GPT architectures.
+
+### Autoregressive Text Generation
+
+Loom-GPT generates text one token at a time by predicting the next character based on previously generated context. Temperature and top-k sampling are supported for controllable generation.
+
+### Training & Checkpointing
+
+The project includes a complete training pipeline with validation loss monitoring, model checkpointing, and configurable hyperparameters for experimentation and reproducibility.
+
+### Modular Design
+
+Each component of the architecture is separated into dedicated modules, making the codebase easier to understand, extend, and experiment with while learning Transformer internals.
+
 
 ---
 
-# Implemented So Far
-
-## 1. Character Tokenizer
-
-Converts text into integers.
-
-Example:
+## Architecture
 
 ```text
-"Hello"
-
-↓
-
-[20,43,50,50,53]
-```
-
-Concept learned:
-- Vocabulary
-- Encoding / Decoding
-- Text representation
-
----
-
-## 2. Dataset Pipeline
-
-Creates training pairs.
-
-Example:
-
-```text
-x = Hell
-y = ello
-```
-
-Model learns:
-
-```text
-H → e
-e → l
-l → l
-l → o
-```
-
-Concept learned:
-- Block size
-- Batch sampling
-- Next-token prediction
-
----
-
-## 3. Bigram Language Model
-
-First neural language model.
-
-Idea:
-
-```text
-Current Character
-↓
-
-Predict Next Character
-```
-
-Built with:
-
-```python
-nn.Embedding
-Cross Entropy
-Softmax
-Sampling
-```
-
-Concept learned:
-- Embeddings
-- Forward pass
-- Loss
-- Generation
-
----
-
-## 4. Training Loop
-
-The first learning loop.
-
-```text
-Predict
-↓
-
-Measure Error
-↓
-
-Backpropagation
-↓
-
-Update
-↓
-
-Repeat
-```
-
-Training reached:
-
-```text
-Train Loss ≈ 2.45
-Validation Loss ≈ 2.61
-```
-
-Output looked like:
-
-```text
-ONBRDrk;
-Ange akind!
-
-...
-```
-
-Not coherent yet — expected for Bigram.
-
-But:
-- Learned punctuation ✅
-- Learned word structure ✅
-- Learned Shakespeare formatting ✅
-
----
-
-## 5. Attention Intuition (Commit 6)
-
-Before self-attention:
-
-All previous tokens contribute equally.
-
-```text
-Past Tokens
-
-↓
-
-Average
-
-↓
-
-Prediction
-```
-
-Three implementations:
-
-### Version 1
-Naive loops
-
-### Version 2
-Matrix multiplication
-
-### Version 3
-Softmax weighting
-
-Key insight:
-
-```text
-Uniform averaging
-
-↓
-
-Learned attention weights
-
-↓
-
-Self-Attention
-```
-
-The secret:
-
-```text
-Attention = softmax(QKᵀ)V
+Input Text
+    ↓
+Character Tokenizer
+    ↓
+Token + Position Embeddings
+    ↓
+Transformer Blocks
+    ├── Multi-Head Self-Attention
+    ├── Feed Forward Network
+    └── Residual Connections
+    ↓
+LayerNorm
+    ↓
+Language Modeling Head
+    ↓
+Next Character Prediction
 ```
 
 ---
 
-# Project Structure
+## Model Configuration
+
+| Component       | Value  |
+| --------------- | ------ |
+| Layers          | 6      |
+| Attention Heads | 6      |
+| Embedding Size  | 384    |
+| Context Length  | 256    |
+| Parameters      | ~10.8M |
+
+---
+
+## Training Results
+
+| Model    | Validation Loss |
+| -------- | --------------- |
+| Full GPT | 1.58            |
+
+The model learns Shakespeare-style structure, speaker formatting, punctuation patterns, and character-level language generation from raw text.
+
+---
+
+## Example Generation
+
+```text
+KING RICHARD III:
+
+What means this? Speak, thou fearful man:
+Is it the morning that hath brought thee here,
+Or art thou come to mock us with thy tongue?
+```
+
+---
+
+## Project Structure
 
 ```text
 loom-gpt/
-
-data/
-└── input.txt
-
-src/
-├── tokenizer.py
-├── dataset.py
-├── bigram.py
-
-notebooks/
-└── averaging_trick.py
-
-train_bigram.py
-
-README.md
+├── data/
+├── notebooks/
+├── src/
+│   ├── attention.py
+│   ├── dataset.py
+│   ├── model.py
+│   └── tokenizer.py
+├── train.py
+├── generate.py
+├── config.py
+└── README.md
 ```
 
 ---
 
-# Concepts Mastered So Far
+## Run Training
 
-✔ Tokenization  
-✔ Embeddings  
-✔ Tensors  
-✔ Dataset batching  
-✔ Bigram Language Models  
-✔ Cross Entropy Loss  
-✔ Backpropagation  
-✔ Training loops  
-✔ Matrix multiplication  
-✔ Softmax  
-✔ Attention intuition  
-
----
-
-# Current Status
-
-```text
-Language Understanding:
-███░░░░░░░░ 30%
-
-Model Capability:
-██░░░░░░░░░ 20%
-
-Transformer Progress:
-████░░░░░░ 40%
+```bash
+python train.py
 ```
 
----
+## Generate Text
 
-# Next Milestone
-
-→ Build actual causal self-attention
-
-Goal:
-
-```text
-Current:
-One Token
-↓
-
-Next Token
-
-Next:
-
-All Previous Tokens
-↓
-
-Next Token
+```bash
+python generate.py
 ```
 
----
+## Acknowledgements
 
-# References
-
-Andrej Karpathy  
-Let's Build GPT: From Scratch
-
-Tiny Shakespeare Dataset
+* Andrej Karpathy — Let's Build GPT
+* Attention Is All You Need (Vaswani et al., 2017)
 
 ---
 
+Built as a learning-focused implementation to understand how GPT models work internally, from embeddings to text generation.
