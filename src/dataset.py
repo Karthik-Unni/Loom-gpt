@@ -1,6 +1,6 @@
 import torch
 
-
+# Its used to take the raw text and then train/test validation and then make it into batches
 # Load raw text, tokenize it, and split into train/validation tensors
 def load_data(filepath: str, tokenizer, train_ratio: float = 0.9):
 
