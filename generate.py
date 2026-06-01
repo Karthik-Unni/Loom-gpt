@@ -1,22 +1,39 @@
 import torch
 import argparse
+from dataclasses import fields
 from config import GPTConfig
-from src.tokenizer import CharTokenizer
+from src.tokenizer import create_tokenizer
 from src.model import GPT
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--checkpoint',   default='out/best_model.pt')
+parser.add_argument('--data-path')
+parser.add_argument('--tokenizer', choices=['byte', 'char'])
 parser.add_argument('--tokens',       type=int,   default=500)
 parser.add_argument('--temperature',  type=float, default=0.8)
 parser.add_argument('--top_k',        type=int,   default=40)
 parser.add_argument('--prompt',       type=str,   default='')
 args = parser.parse_args()
 
-cfg  = GPTConfig()
+cfg = GPTConfig()
+checkpoint = torch.load(args.checkpoint, map_location=cfg.device)
+if 'model_state' in checkpoint:
+    known_fields = {field.name for field in fields(GPTConfig)}
+    for key, value in checkpoint['config'].items():
+        if key in known_fields and key != 'device':
+            setattr(cfg, key, value)
+    model_state = checkpoint['model_state']
+else:
+    # Compatibility with checkpoints created before LOOM dataset support.
+    model_state = checkpoint
+if args.data_path:
+    cfg.data_path = args.data_path
+if args.tokenizer:
+    cfg.tokenizer = args.tokenizer
 cfg.dropout = 0.0   # no dropout at inference
 
-text = open(cfg.data_path).read()
-tok  = CharTokenizer(text)
+text = open(cfg.data_path, encoding='utf-8').read()
+tok  = create_tokenizer(cfg.tokenizer, text)
 cfg.vocab_size = tok.vocab_size
 
 model = GPT(
@@ -28,7 +45,7 @@ model = GPT(
     dropout=cfg.dropout,
 ).to(cfg.device)
 
-model.load_state_dict(torch.load(args.checkpoint, map_location=cfg.device))
+model.load_state_dict(model_state)
 model.eval()
 
 if args.prompt:

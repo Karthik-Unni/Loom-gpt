@@ -4,5 +4,6 @@ __pycache__/
 *.pt
 .ipynb_checkpoints/
 data/input.txt
+data/loom/
 out/
 .DS_Store

@@ -1,135 +1,215 @@
-# 🧵 Loom-GPT
+# LOOM-GPT
 
-A GPT-style language model built from scratch in PyTorch by implementing the core components of the Transformer architecture step-by-step.
+Train small GPT-style transformers on your own text, notes, code, and structured files.
 
----
+LOOM-GPT started as a from-scratch implementation inspired by Andrej Karpathy's
+["Let's build GPT"](https://www.youtube.com/watch?v=kCc8FmEb1nY) tutorial. It is now
+growing into a local AI laboratory: a readable toolkit for preparing datasets,
+training tiny domain-specific models, and experimenting with how models can be
+combined.
 
-## Features
+The project is intentionally small. It is useful for learning, prototyping, and
+running controlled experiments. It is not a replacement for a large pretrained
+assistant.
 
-### Character-Level Tokenization
+## Current Release: Dataset Loom
 
-Loom-GPT converts raw text into character tokens and learns language patterns directly from the data without relying on any pre-trained tokenizer. This helps illustrate the complete language modeling pipeline from the ground up.
+The first usable milestone lets you:
 
-### Self-Attention from Scratch
+- Prepare a dataset from a file or folder.
+- Ingest `.txt`, `.md`, `.jsonl`, `.csv`, and common source-code files.
+- Inspect a generated dataset manifest.
+- Train with `tiny`, `laptop`, or `single_gpu` presets.
+- Choose universal UTF-8 byte tokenization or the original character tokenizer.
+- Save self-describing checkpoints that remember their model configuration.
+- Generate text from a trained checkpoint.
 
-The attention mechanism is implemented manually using Query, Key, and Value projections. This allows the model to learn which previous tokens are most relevant when predicting the next character.
+## Quick Start
 
-### Multi-Head Attention
+Create a virtual environment and install the project:
 
-Multiple attention heads operate in parallel, enabling the model to capture different contextual relationships within the text. Their outputs are combined to build richer token representations.
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e .
+```
 
-### Transformer Architecture
+Prepare a dataset from your own folder:
 
-The model is built using stacked Transformer blocks consisting of multi-head self-attention, feed-forward networks, residual connections, and layer normalization, closely following modern GPT architectures.
+```bash
+loom dataset add ./my-notes --name notes
+loom dataset inspect notes
+```
 
-### Autoregressive Text Generation
+Train a small model:
 
-Loom-GPT generates text one token at a time by predicting the next character based on previously generated context. Temperature and top-k sampling are supported for controllable generation.
+```bash
+loom train --data data/loom/notes/input.txt --out out/notes --preset tiny
+```
 
-### Training & Checkpointing
+Generate text:
 
-The project includes a complete training pipeline with validation loss monitoring, model checkpointing, and configurable hyperparameters for experimentation and reproducibility.
+```bash
+loom generate --checkpoint out/notes/best_model.pt --prompt "Today I learned"
+```
 
-### Modular Design
+You can also run commands without installing the CLI:
 
-Each component of the architecture is separated into dedicated modules, making the codebase easier to understand, extend, and experiment with while learning Transformer internals.
+```bash
+python loom.py dataset add ./my-notes --name notes
+python loom.py train --data data/loom/notes/input.txt --out out/notes --preset tiny
+```
 
+## Dataset Preparation
 
----
+LOOM combines supported files into one training corpus and records a manifest:
+
+```text
+data/loom/notes/
+  input.txt
+  manifest.json
+```
+
+Each source file receives a boundary marker:
+
+```text
+<loom:file path="docs/example.md">
+file contents
+</loom:file>
+```
+
+The markers retain useful file context for experiments with notes and code.
+Prepared corpora are ignored by Git because personal datasets may be large or
+sensitive.
+
+## Tokenizers
+
+Byte tokenization is the default:
+
+```bash
+loom train --data data/loom/notes/input.txt --tokenizer byte
+```
+
+It uses a fixed vocabulary of 256 UTF-8 bytes, so the same model pipeline works
+with multilingual text, code, and mixed datasets. The original educational
+character tokenizer remains available:
+
+```bash
+loom train --data data/input.txt --tokenizer char
+```
+
+## Presets
+
+| Preset | Intended use | Layers | Heads | Embedding size |
+| --- | --- | ---: | ---: | ---: |
+| `tiny` | Quick experiments | 2 | 2 | 64 |
+| `laptop` | Default local training | 4 | 4 | 128 |
+| `single_gpu` | Longer GPU runs | 6 | 6 | 384 |
+
+Use `--max-iters` to override the preset training duration:
+
+```bash
+loom train --data data/loom/notes/input.txt --preset tiny --max-iters 50
+```
 
 ## Architecture
 
-```text
-Input Text
-    ↓
-Character Tokenizer
-    ↓
-Token + Position Embeddings
-    ↓
-Transformer Blocks
-    ├── Multi-Head Self-Attention
-    ├── Feed Forward Network
-    └── Residual Connections
-    ↓
-LayerNorm
-    ↓
-Language Modeling Head
-    ↓
-Next Character Prediction
-```
-
----
-
-## Model Configuration
-
-| Component       | Value  |
-| --------------- | ------ |
-| Layers          | 6      |
-| Attention Heads | 6      |
-| Embedding Size  | 384    |
-| Context Length  | 256    |
-| Parameters      | ~10.8M |
-
----
-
-## Training Results
-
-| Model    | Validation Loss |
-| -------- | --------------- |
-| Full GPT | 1.58            |
-
-The model learns Shakespeare-style structure, speaker formatting, punctuation patterns, and character-level language generation from raw text.
-
----
-
-## Example Generation
+The model remains a readable decoder-only transformer built from scratch:
 
 ```text
-KING RICHARD III:
-
-What means this? Speak, thou fearful man:
-Is it the morning that hath brought thee here,
-Or art thou come to mock us with thy tongue?
+input files
+  -> dataset preparation
+  -> tokenizer
+  -> token and position embeddings
+  -> causal multi-head self-attention
+  -> feed-forward layers
+  -> next-token prediction
+  -> generated text
 ```
 
----
-
-## Project Structure
+Important files:
 
 ```text
-loom-gpt/
-├── data/
-├── notebooks/
-├── src/
-│   ├── attention.py
-│   ├── dataset.py
-│   ├── model.py
-│   └── tokenizer.py
-├── train.py
-├── generate.py
-├── config.py
-└── README.md
+loom.py              CLI entry point
+config.py            Training presets
+src/data_prep.py     Dataset ingestion and manifests
+src/tokenizer.py     Byte and character tokenizers
+src/attention.py     Causal self-attention
+src/model.py         Transformer blocks and GPT model
+train.py             Training and checkpoints
+generate.py          Text generation
+tests/               Lightweight tests
 ```
 
----
+## Roadmap: Model Weaving
 
-## Run Training
+The signature feature planned for LOOM Studio is **Model Weaving**: train small
+specialists on different datasets and blend their influence during generation.
+
+```text
+poetry expert      70% --\
+philosophy expert  30% ----> woven generation
+code expert         0% --/
+```
+
+Planned milestones:
+
+- Add a web dashboard with dataset stats, loss charts, and generation controls.
+- Train separate domain specialists.
+- Blend specialists with manual sliders.
+- Visualize each specialist's influence token by token.
+- Compare manual blending against a learned router.
+- Evaluate domain interference, model size, memory use, and generation quality.
+
+## Development Workflow
+
+Build and push the project in reviewable milestones:
 
 ```bash
-python train.py
+# Step 1: reusable dataset framework and byte tokenizer
+git add loom.py pyproject.toml config.py train.py generate.py src/data_prep.py src/tokenizer.py tests .gitignore README.md
+git commit -m "feat: add reusable dataset training framework"
+git push origin main
+
+# Step 2: dashboard
+git add loom/dashboard.py requirements.txt README.md
+git commit -m "feat: add local training dashboard"
+git push origin main
+
+# Step 3: model weaving
+git add src/weaving.py loom/dashboard.py tests README.md
+git commit -m "feat: add weighted model weaving"
+git push origin main
+
+# Step 4: research evaluation
+git add experiments docs README.md
+git commit -m "feat: add model weaving evaluation suite"
+git push origin main
 ```
 
-## Generate Text
+Before each push:
 
 ```bash
-python generate.py
+python -m unittest discover -s tests -v
+git status
+git diff --stat
 ```
 
-## Acknowledgements
+Review the staged files before committing. Do not commit private datasets or
+generated model checkpoints.
 
-* Andrej Karpathy — Let's Build GPT
-* Attention Is All You Need (Vaswani et al., 2017)
+## Legacy Checkpoints
 
----
+Older checkpoints only contain model weights. When generating from one, provide
+the old dataset and character tokenizer explicitly:
 
-Built as a learning-focused implementation to understand how GPT models work internally, from embeddings to text generation.
+```bash
+loom generate \
+  --checkpoint out/best_model.pt \
+  --data data/input.txt \
+  --tokenizer char \
+  --prompt "ROMEO:"
+```
+
+New checkpoints store their tokenizer and architecture configuration
+automatically.

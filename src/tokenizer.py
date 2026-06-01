@@ -40,3 +40,23 @@ Decoded: Hello, World!
 Round-trip OK: True
 
     '''
+
+
+class ByteTokenizer:
+    """UTF-8 byte tokenizer with a fixed vocabulary for arbitrary text."""
+
+    vocab_size = 256
+
+    def encode(self, s: str) -> list[int]:
+        return list(s.encode('utf-8'))
+
+    def decode(self, ids: list[int]) -> str:
+        return bytes(ids).decode('utf-8', errors='replace')
+
+
+def create_tokenizer(kind: str, text: str = ''):
+    if kind == 'char':
+        return CharTokenizer(text)
+    if kind == 'byte':
+        return ByteTokenizer()
+    raise ValueError(f"Unknown tokenizer '{kind}'. Choose 'char' or 'byte'.")

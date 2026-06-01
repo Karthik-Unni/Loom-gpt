@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loom-gpt"
+version = "0.1.0"
+description = "A local toolkit for training tiny GPT models on your own data."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch",
+    "numpy",
+    "matplotlib",
+]
+
+[project.scripts]
+loom = "loom:main"
+
+[tool.setuptools]
+py-modules = ["loom", "config"]
+
+[tool.setuptools.packages.find]
+include = ["src*"]
