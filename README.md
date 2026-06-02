@@ -1,4 +1,4 @@
-# LOOM-GPT
+#  🧵 LOOM-GPT
 
 Train small specialist transformers locally. Weave their outputs together. Inspect which specialist shaped each generated token.
 
