@@ -1,107 +1,67 @@
 # LOOM-GPT
 
-Train small GPT-style transformers on your own text, notes, code, and structured files.
+Train small specialist transformers locally. Weave their outputs together. Inspect which specialist shaped each generated token.
 
-LOOM-GPT started as a from-scratch implementation inspired by Andrej Karpathy's
-["Let's build GPT"](https://www.youtube.com/watch?v=kCc8FmEb1nY) tutorial. It is now
-growing into a local AI laboratory: a readable toolkit for preparing datasets,
-training tiny domain-specific models, and experimenting with how models can be
-combined.
+LOOM-GPT is a local transformer laboratory for students, developers, writers, and researchers who want to understand and experiment with GPT-style models from the inside.
 
-The project is intentionally small. It is useful for learning, prototyping, and
-running controlled experiments. It is not a replacement for a large pretrained
-assistant.
+It started as a from-scratch PyTorch implementation inspired by Andrej Karpathy's "Let's build GPT" tutorial. It is now becoming **LOOM Studio**: a framework where users can prepare their own datasets, train compact specialist models, and blend those specialists during generation.
 
-## Current Release: Dataset Loom
+LOOM-GPT is not a ChatGPT replacement. It does not use a giant pretrained model. Instead, it gives you a readable, hackable, local system for training tiny domain-specific transformers and studying how they behave.
 
-The first usable milestone lets you:
+## What This Project Does
 
-- Prepare a dataset from a file or folder.
-- Ingest `.txt`, `.md`, `.jsonl`, `.csv`, and common source-code files.
-- Inspect a generated dataset manifest.
-- Train with `tiny`, `laptop`, or `single_gpu` presets.
-- Choose universal UTF-8 byte tokenization or the original character tokenizer.
-- Save self-describing checkpoints that remember their model configuration.
-- Stop early when validation quality no longer improves.
-- Export `history.csv` metrics for charts and experiment reports.
-- Resume interrupted training runs.
-- Use reproducible random seeds and generation presets.
-- Generate text from a trained checkpoint.
-- Blend compatible specialist checkpoints with `loom weave`.
+LOOM-GPT lets you:
 
-## Quick Start
+- Prepare a dataset from your own files and folders.
+- Train a small GPT-style transformer from scratch.
+- Save reusable checkpoints with model configuration included.
+- Track training and validation loss in `history.csv`.
+- Stop training early when validation loss stops improving.
+- Generate text from one trained specialist.
+- Train multiple specialists on different datasets.
+- Weave specialists by blending their next-token predictions.
+- Export a JSON trace showing which specialist most influenced each generated token.
 
-Create a virtual environment and install the project:
+The core workflow looks like this:
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -e .
+```text
+Your files
+  -> dataset preparation
+  -> byte tokenization
+  -> specialist training
+  -> checkpoint
+  -> generation
+  -> optional Model Weaving
 ```
 
-Prepare a dataset from your own folder:
+## Who Can Use It?
+
+LOOM-GPT is useful for:
+
+- **Students** learning how GPT models work without hiding everything behind an API.
+- **Developers** experimenting with small domain-specific text models.
+- **Writers** training tiny style models on different genres or voices.
+- **Researchers** testing interpretable model composition ideas.
+- **Educators** demonstrating tokenization, attention, overfitting, validation loss, and sampling.
+
+Example user stories:
+
+- A student trains one specialist on poetry and another on technical documentation, then blends the two to see how generation changes.
+- A developer trains a tiny model on internal notes or code comments to study local domain language.
+- A researcher compares one mixed-data model against several woven specialist models.
+- A teacher uses the training logs to show why validation loss matters more than training loss.
+
+## Key Features
+
+### Custom Dataset Preparation
+
+Point LOOM at a file or folder:
 
 ```bash
 loom dataset add ./my-notes --name notes
-loom dataset inspect notes
 ```
 
-Train a small model:
-
-```bash
-loom train --data data/loom/notes/input.txt --out out/notes --preset tiny
-```
-
-For a longer run with early stopping:
-
-```bash
-loom train \
-  --data data/loom/notes/input.txt \
-  --out out/notes \
-  --preset laptop \
-  --early-stopping 8 \
-  --seed 42
-```
-
-Resume an interrupted run:
-
-```bash
-loom train \
-  --data data/loom/notes/input.txt \
-  --out out/notes \
-  --preset laptop \
-  --max-iters 5000 \
-  --resume out/notes/final_model.pt
-```
-
-Generate text:
-
-```bash
-loom generate --checkpoint out/notes/best_model.pt --prompt "Today I learned" --preset precise
-```
-
-Blend two or more specialist checkpoints:
-
-```bash
-loom weave \
-  --model poetry=out/poetry/best_model.pt \
-  --model technology=out/technology/best_model.pt \
-  --weight poetry=0.7 \
-  --weight technology=0.3 \
-  --prompt "The city at night" \
-  --trace-out out/weaving/city-trace.json
-```
-
-You can also run commands without installing the CLI:
-
-```bash
-python loom.py dataset add ./my-notes --name notes
-python loom.py train --data data/loom/notes/input.txt --out out/notes --preset tiny
-```
-
-## Dataset Preparation
-
-LOOM combines supported files into one training corpus and records a manifest:
+LOOM combines supported files into:
 
 ```text
 data/loom/notes/
@@ -109,7 +69,15 @@ data/loom/notes/
   manifest.json
 ```
 
-Each source file receives a boundary marker:
+Supported file types include:
+
+- `.txt`
+- `.md`
+- `.jsonl`
+- `.csv`
+- Common code files such as `.py`, `.js`, `.ts`, `.java`, `.rs`, `.go`, `.html`, `.css`, `.sql`, `.yaml`
+
+Each source file is wrapped with a boundary marker:
 
 ```text
 <loom:file path="docs/example.md">
@@ -117,53 +85,84 @@ file contents
 </loom:file>
 ```
 
-The markers retain useful file context for experiments with notes and code.
-Prepared corpora are ignored by Git because personal datasets may be large or
-sensitive.
+That keeps file context visible to the model and to future experiments.
 
-## Tokenizers
+### Local Transformer Training
 
-Byte tokenization is the default:
+Train a small decoder-only GPT model:
 
 ```bash
-loom train --data data/loom/notes/input.txt --tokenizer byte
+loom train --data data/loom/notes/input.txt --out out/notes --preset tiny
 ```
 
-It uses a fixed vocabulary of 256 UTF-8 bytes, so the same model pipeline works
-with multilingual text, code, and mixed datasets. The original educational
-character tokenizer remains available:
+Longer training with early stopping:
+
+```bash
+loom train \
+  --data data/loom/notes/input.txt \
+  --out out/notes \
+  --preset laptop \
+  --max-iters 5000 \
+  --early-stopping 8 \
+  --seed 42
+```
+
+Training creates:
+
+```text
+out/notes/
+  best_model.pt
+  final_model.pt
+  history.csv
+```
+
+Use `best_model.pt` for generation because it stores the checkpoint with the lowest validation loss.
+
+### Training Presets
+
+| Preset | Use case | Layers | Heads | Embedding size |
+| --- | --- | ---: | ---: | ---: |
+| `tiny` | Quick smoke tests | 2 | 2 | 64 |
+| `laptop` | Normal local experiments | 4 | 4 | 128 |
+| `single_gpu` | Longer GPU runs | 6 | 6 | 384 |
+
+### Byte Tokenization
+
+LOOM uses UTF-8 byte tokenization by default:
+
+```text
+text -> bytes -> token IDs from 0 to 255
+```
+
+This means the same training pipeline can handle English, multilingual text, code, and mixed folders.
+
+The original character tokenizer is still available for educational experiments:
 
 ```bash
 loom train --data data/input.txt --tokenizer char
 ```
 
-## Presets
+### Generation
 
-| Preset | Intended use | Layers | Heads | Embedding size |
-| --- | --- | ---: | ---: | ---: |
-| `tiny` | Quick experiments | 2 | 2 | 64 |
-| `laptop` | Default local training | 4 | 4 | 128 |
-| `single_gpu` | Longer GPU runs | 6 | 6 | 384 |
-
-Use `--max-iters` to override the preset training duration:
+Generate from a single trained specialist:
 
 ```bash
-loom train --data data/loom/notes/input.txt --preset tiny --max-iters 50
+loom generate \
+  --checkpoint out/notes/best_model.pt \
+  --prompt "Today I learned that " \
+  --preset precise \
+  --tokens 250
 ```
 
-Training writes `best_model.pt`, `final_model.pt`, and `history.csv` under the
-selected output folder. `best_model.pt` is usually the right checkpoint for
-generation because it preserves the lowest validation loss before overfitting.
+Generation presets:
 
-## Generation Presets
-
-| Preset | Temperature | Top-k | Use case |
+| Preset | Temperature | Top-k | Behavior |
 | --- | ---: | ---: | --- |
-| `precise` | 0.5 | 15 | More conservative output |
-| `balanced` | 0.8 | 40 | Default experiments |
-| `creative` | 1.0 | 80 | More varied output |
+| `precise` | 0.5 | 15 | More conservative |
+| `balanced` | 0.8 | 40 | Default |
+| `creative` | 1.0 | 80 | More varied |
 
-Override either value manually when needed:
+Manual override:
 
 ```bash
 loom generate \
@@ -173,111 +172,377 @@ loom generate \
   --top-k 20
 ```
 
-## Architecture
+## Model Weaving
 
-The model remains a readable decoder-only transformer built from scratch:
+Model Weaving is LOOM-GPT's signature feature.
+
+Instead of training one model on everything, you train separate specialists:
 
 ```text
-input files
-  -> dataset preparation
-  -> tokenizer
-  -> token and position embeddings
+poetry specialist
+technology specialist
+philosophy specialist
+```
+
+During generation, LOOM asks each specialist for its next-token prediction, blends their logits using your weights, samples one token, and repeats.
+
+```text
+Prompt
+  -> poetry logits
+  -> technology logits
+  -> philosophy logits
+  -> weighted blend
+  -> sampled token
+  -> influence trace
+```
+
+Simple example:
+
+```text
+poetry      70%
+technology 30%
+
+Prompt: "The city at night"
+```
+
+LOOM blends the specialists like this:
+
+```python
+woven_logits = 0.7 * poetry_logits + 0.3 * technology_logits
+```
+
+The result is not just one model generating text. It is several small models contributing to the next token.
+
+### Weaving Command
+
+```bash
+loom weave \
+  --model poetry=out/poetry/best_model.pt \
+  --model technology=out/technology/best_model.pt \
+  --weight poetry=0.7 \
+  --weight technology=0.3 \
+  --prompt "The city at night" \
+  --tokens 300 \
+  --preset balanced \
+  --trace-out out/weaving/city-trace.json
+```
+
+If no weights are provided, LOOM gives all specialists equal weight.
+
+```bash
+loom weave \
+  --model poetry=out/poetry/best_model.pt \
+  --model technology=out/technology/best_model.pt \
+  --prompt "The city at night"
+```
+
+### Influence Trace
+
+When you pass `--trace-out`, LOOM writes a JSON file like:
+
+```json
+[
+  {
+    "token_id": 84,
+    "specialist": "poetry",
+    "contributions": {
+      "poetry": 0.72,
+      "technology": 0.28
+    }
+  }
+]
+```
+
+Each item tells you:
+
+- The generated token ID.
+- Which specialist had the strongest contribution.
+- Each specialist's normalized contribution for that token.
+
+This trace is the foundation for the future dashboard visualization where generated tokens can be colored by specialist influence.
+
+### Current Weaving Constraints
+
+For now:
+
+- Specialists must use the default `byte` tokenizer.
+- Specialists must have the same architecture.
+- Legacy character-tokenizer checkpoints cannot be woven.
+- Weaving works best when specialists were trained with the same preset.
+
+Recommended specialist training:
+
+```bash
+loom train --data data/loom/poetry/input.txt --out out/poetry --preset laptop --early-stopping 8
+loom train --data data/loom/technology/input.txt --out out/technology --preset laptop --early-stopping 8
+loom train --data data/loom/philosophy/input.txt --out out/philosophy --preset laptop --early-stopping 8
+```
+
+Then weave:
+
+```bash
+loom weave \
+  --model poetry=out/poetry/best_model.pt \
+  --model technology=out/technology/best_model.pt \
+  --model philosophy=out/philosophy/best_model.pt \
+  --weight poetry=0.5 \
+  --weight technology=0.3 \
+  --weight philosophy=0.2 \
+  --prompt "The future belongs to "
+```
+
+## Complete Example Use Case
+
+Imagine a student wants to explore how style changes when technical writing and poetry are blended.
+
+Create two folders:
+
+```text
+demo-data/
+  poetry/
+    poems.txt
+  technology/
+    ai-notes.md
+    software-docs.txt
+```
+
+Prepare datasets:
+
+```bash
+loom dataset add ./demo-data/poetry --name poetry
+loom dataset add ./demo-data/technology --name technology
+```
+
+Train specialists:
+
+```bash
+loom train --data data/loom/poetry/input.txt --out out/poetry --preset laptop --early-stopping 8
+loom train --data data/loom/technology/input.txt --out out/technology --preset laptop --early-stopping 8
+```
+
+Generate from each specialist separately:
+
+```bash
+loom generate --checkpoint out/poetry/best_model.pt --prompt "The city at night" --preset precise
+loom generate --checkpoint out/technology/best_model.pt --prompt "The city at night" --preset precise
+```
+
+Now weave them:
+
+```bash
+loom weave \
+  --model poetry=out/poetry/best_model.pt \
+  --model technology=out/technology/best_model.pt \
+  --weight poetry=0.8 \
+  --weight technology=0.2 \
+  --prompt "The city at night" \
+  --trace-out out/weaving/poetic-city.json
+```
+
+Then flip the weights:
+
+```bash
+loom weave \
+  --model poetry=out/poetry/best_model.pt \
+  --model technology=out/technology/best_model.pt \
+  --weight poetry=0.2 \
+  --weight technology=0.8 \
+  --prompt "The city at night" \
+  --trace-out out/weaving/technical-city.json
+```
+
+The user can compare:
+
+- Poetry-only output
+- Technology-only output
+- Mostly-poetry woven output
+- Mostly-technology woven output
+- Token influence traces
+
+That is the main product idea: train local specialists, control their blend, and inspect how the blend shapes generation.
+
+## Installation
+
+```bash
+git clone https://github.com/Karthik-Unni/Loom-gpt.git
+cd Loom-gpt
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e .
+```
+
+If PowerShell blocks activation:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.venv\Scripts\Activate.ps1
+```
+
+## Commands
+
+Prepare a dataset:
+
+```bash
+loom dataset add ./my-notes --name notes
+loom dataset inspect notes
+```
+
+Train:
+
+```bash
+loom train --data data/loom/notes/input.txt --out out/notes --preset laptop
+```
+
+Resume:
+
+```bash
+loom train \
+  --data data/loom/notes/input.txt \
+  --out out/notes \
+  --preset laptop \
+  --resume out/notes/final_model.pt
+```
+
+Generate:
+
+```bash
+loom generate --checkpoint out/notes/best_model.pt --prompt "Today I learned"
+```
+
+Weave:
+
+```bash
+loom weave \
+  --model a=out/a/best_model.pt \
+  --model b=out/b/best_model.pt \
+  --weight a=0.6 \
+  --weight b=0.4 \
+  --prompt "Once upon a system"
+```
+
+## Architecture
+
+The model is a small decoder-only transformer built from scratch in PyTorch:
+
+```text
+tokens
+  -> token embeddings
+  -> position embeddings
   -> causal multi-head self-attention
   -> feed-forward layers
-  -> next-token prediction
-  -> generated text
+  -> layer normalization
+  -> next-token logits
 ```
 
 Important files:
 
 ```text
-loom.py              CLI entry point
-config.py            Training presets
-src/data_prep.py     Dataset ingestion and manifests
-src/tokenizer.py     Byte and character tokenizers
+loom.py              Main CLI wrapper
+train.py             Training entry point
+generate.py          Single-checkpoint generation
+weave.py             Multi-specialist weaving entry point
+config.py            Model presets
+src/model.py         GPT model
 src/attention.py     Causal self-attention
-src/model.py         Transformer blocks and GPT model
-train.py             Training and checkpoints
-generate.py          Text generation
-tests/               Lightweight tests
+src/tokenizer.py     Byte and character tokenizers
+src/data_prep.py     Dataset ingestion
+src/training.py      Early stopping, history, generation presets
+src/weaving.py       Weighted Model Weaving
+tests/               Unit tests
 ```
 
-## Model Weaving
+## What LOOM-GPT Is Good At
 
-The signature feature is **Model Weaving**: train small specialists on different
-datasets and blend their influence during generation.
+- Learning transformer internals.
+- Running small local experiments.
+- Comparing datasets and specialists.
+- Demonstrating overfitting and validation loss.
+- Exploring controllable generation through weighted specialists.
+- Creating a portfolio project with a clear research-style idea.
+
+## What LOOM-GPT Is Not
+
+- It is not ChatGPT.
+- It is not a factual assistant.
+- It is not trained on internet-scale data.
+- It will not produce polished text from tiny datasets.
+- It does not yet have a full dashboard.
+
+Small models trained from scratch need clean data and patience. The goal is experimentation and interpretability, not production-grade language understanding.
+
+## Recommended Data Size
+
+For experiments:
 
 ```text
-poetry expert      70% --\
-philosophy expert  30% ----> woven generation
-code expert         0% --/
+100,000+ characters: basic behavior
+500,000+ characters: better small-model experiments
+2,000,000+ characters: noticeably stronger local style learning
 ```
 
-Planned milestones:
+Use clean, consistent data. Remove broken HTML, duplicated lines, unrelated text, and noisy formatting when possible.
 
-- Add a web dashboard with dataset stats, loss charts, and generation controls.
-- Train separate domain specialists. Current CLI support is available through `loom weave`.
-- Blend specialists with manual weights.
-- Visualize each specialist's influence token by token.
-- Compare manual blending against a learned router.
-- Evaluate domain interference, model size, memory use, and generation quality.
+## Roadmap
 
-Current weaving constraints:
+Completed:
 
-- Specialists must use the default byte tokenizer.
-- Specialists must have the same architecture.
-- Legacy character-tokenizer checkpoints are not supported for weaving.
-- The optional JSON trace records which specialist most influenced each generated token.
+- Custom dataset preparation
+- Byte tokenizer
+- GPT training from scratch
+- Early stopping
+- Training history CSV
+- Generation presets
+- Weighted Model Weaving CLI
+- Token influence trace export
+
+Next:
+
+- Streamlit dashboard
+- Loss charts
+- Specialist sliders
+- Colored token influence visualization
+- BPE tokenizer experiments
+- Research evaluation suite
+
+Future dashboard concept:
+
+```text
+Datasets -> Train -> Generate -> Weave -> Metrics
+```
+
+The long-term vision is a local LOOM Studio interface where users train specialists, move sliders, generate text, and see which specialist influenced each token.
 
 ## Development Workflow
 
-Build and push the project in reviewable milestones:
-
-```bash
-# Step 1: reusable dataset framework and byte tokenizer
-git add loom.py pyproject.toml config.py train.py generate.py src/data_prep.py src/tokenizer.py tests .gitignore README.md
-git commit -m "feat: add reusable dataset training framework"
-git push origin main
-
-# Step 2: dashboard
-git add loom/dashboard.py requirements.txt README.md
-git commit -m "feat: add local training dashboard"
-git push origin main
-
-# Step 3: model weaving
-git add src/weaving.py loom/dashboard.py tests README.md
-git commit -m "feat: add weighted model weaving"
-git push origin main
-
-# Step 4: research evaluation
-git add experiments docs README.md
-git commit -m "feat: add model weaving evaluation suite"
-git push origin main
-```
-
-Before each push:
+Run tests:
 
 ```bash
 python -m unittest discover -s tests -v
+```
+
+Compile check:
+
+```bash
+python -m compileall -q loom.py train.py generate.py weave.py src tests
+```
+
+Before pushing:
+
+```bash
 git status
 git diff --stat
 ```
 
-Review the staged files before committing. Do not commit private datasets or
-generated model checkpoints.
+Do not commit:
 
-## Legacy Checkpoints
+- `.venv/`
+- `out/`
+- `data/loom/`
+- personal datasets
+- `.pt` checkpoints
 
-Older checkpoints only contain model weights. When generating from one, provide
-the old dataset and character tokenizer explicitly:
+These are ignored by default.
 
-```bash
-loom generate \
-  --checkpoint out/best_model.pt \
-  --data data/input.txt \
-  --tokenizer char \
-  --prompt "ROMEO:"
-```
+## License
 
-New checkpoints store their tokenizer and architecture configuration
-automatically.
+Add a license before using this as a public release project.
