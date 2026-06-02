@@ -45,6 +45,9 @@ def train(args) -> None:
         forwarded.extend(['--tokenizer', args.tokenizer])
     if args.max_iters is not None:
         forwarded.extend(['--max-iters', str(args.max_iters)])
+    forwarded.extend(['--early-stopping', str(args.early_stopping), '--seed', str(args.seed)])
+    if args.resume:
+        forwarded.extend(['--resume', args.resume])
     _run('train.py', forwarded)
 
 
@@ -52,10 +55,13 @@ def generate(args) -> None:
     forwarded = [
         '--checkpoint', args.checkpoint,
         '--tokens', str(args.tokens),
-        '--temperature', str(args.temperature),
-        '--top_k', str(args.top_k),
+        '--preset', args.preset,
         '--prompt', args.prompt,
     ]
+    if args.temperature is not None:
+        forwarded.extend(['--temperature', str(args.temperature)])
+    if args.top_k is not None:
+        forwarded.extend(['--top_k', str(args.top_k)])
     if args.data:
         forwarded.extend(['--data-path', args.data])
     if args.tokenizer:
@@ -86,6 +92,9 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument('--preset', choices=['tiny', 'laptop', 'single_gpu'], default='laptop')
     train_parser.add_argument('--tokenizer', choices=['byte', 'char'])
     train_parser.add_argument('--max-iters', type=int)
+    train_parser.add_argument('--early-stopping', type=int, default=8, metavar='EVALS')
+    train_parser.add_argument('--seed', type=int, default=42)
+    train_parser.add_argument('--resume', help='Resume from a checkpoint.')
     train_parser.set_defaults(func=train)
 
     generate_parser = commands.add_parser('generate', help='Generate text from a checkpoint.')
@@ -94,8 +103,9 @@ def build_parser() -> argparse.ArgumentParser:
     generate_parser.add_argument('--tokenizer', choices=['byte', 'char'], help='Override tokenizer.')
     generate_parser.add_argument('--prompt', default='')
     generate_parser.add_argument('--tokens', type=int, default=500)
-    generate_parser.add_argument('--temperature', type=float, default=0.8)
-    generate_parser.add_argument('--top-k', dest='top_k', type=int, default=40)
+    generate_parser.add_argument('--preset', choices=['precise', 'balanced', 'creative'], default='balanced')
+    generate_parser.add_argument('--temperature', type=float)
+    generate_parser.add_argument('--top-k', dest='top_k', type=int)
     generate_parser.set_defaults(func=generate)
 
     return parser

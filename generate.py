@@ -4,16 +4,19 @@ from dataclasses import fields
 from config import GPTConfig
 from src.tokenizer import create_tokenizer
 from src.model import GPT
+from src.training import resolve_generation_settings
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--checkpoint',   default='out/best_model.pt')
 parser.add_argument('--data-path')
 parser.add_argument('--tokenizer', choices=['byte', 'char'])
 parser.add_argument('--tokens',       type=int,   default=500)
-parser.add_argument('--temperature',  type=float, default=0.8)
-parser.add_argument('--top_k',        type=int,   default=40)
+parser.add_argument('--preset', choices=['precise', 'balanced', 'creative'], default='balanced')
+parser.add_argument('--temperature',  type=float)
+parser.add_argument('--top_k',        type=int)
 parser.add_argument('--prompt',       type=str,   default='')
 args = parser.parse_args()
+args.temperature, args.top_k = resolve_generation_settings(args.preset, args.temperature, args.top_k)
 
 cfg = GPTConfig()
 checkpoint = torch.load(args.checkpoint, map_location=cfg.device)

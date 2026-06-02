@@ -22,6 +22,10 @@ The first usable milestone lets you:
 - Train with `tiny`, `laptop`, or `single_gpu` presets.
 - Choose universal UTF-8 byte tokenization or the original character tokenizer.
 - Save self-describing checkpoints that remember their model configuration.
+- Stop early when validation quality no longer improves.
+- Export `history.csv` metrics for charts and experiment reports.
+- Resume interrupted training runs.
+- Use reproducible random seeds and generation presets.
 - Generate text from a trained checkpoint.
 
 ## Quick Start
@@ -47,10 +51,32 @@ Train a small model:
 loom train --data data/loom/notes/input.txt --out out/notes --preset tiny
 ```
 
+For a longer run with early stopping:
+
+```bash
+loom train \
+  --data data/loom/notes/input.txt \
+  --out out/notes \
+  --preset laptop \
+  --early-stopping 8 \
+  --seed 42
+```
+
+Resume an interrupted run:
+
+```bash
+loom train \
+  --data data/loom/notes/input.txt \
+  --out out/notes \
+  --preset laptop \
+  --max-iters 5000 \
+  --resume out/notes/final_model.pt
+```
+
 Generate text:
 
 ```bash
-loom generate --checkpoint out/notes/best_model.pt --prompt "Today I learned"
+loom generate --checkpoint out/notes/best_model.pt --prompt "Today I learned" --preset precise
 ```
 
 You can also run commands without installing the CLI:
@@ -110,6 +136,28 @@ Use `--max-iters` to override the preset training duration:
 
 ```bash
 loom train --data data/loom/notes/input.txt --preset tiny --max-iters 50
+```
+
+Training writes `best_model.pt`, `final_model.pt`, and `history.csv` under the
+selected output folder. `best_model.pt` is usually the right checkpoint for
+generation because it preserves the lowest validation loss before overfitting.
+
+## Generation Presets
+
+| Preset | Temperature | Top-k | Use case |
+| --- | ---: | ---: | --- |
+| `precise` | 0.5 | 15 | More conservative output |
+| `balanced` | 0.8 | 40 | Default experiments |
+| `creative` | 1.0 | 80 | More varied output |
+
+Override either value manually when needed:
+
+```bash
+loom generate \
+  --checkpoint out/notes/best_model.pt \
+  --prompt "Artificial intelligence can " \
+  --temperature 0.6 \
+  --top-k 20
 ```
 
 ## Architecture

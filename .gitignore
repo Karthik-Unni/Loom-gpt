@@ -1,9 +1,12 @@
 __pycache__/
+.venv/
+*.egg-info/
 *.pyc
 *.pth
 *.pt
 .ipynb_checkpoints/
 data/input.txt
 data/loom/
+my-notes/
 out/
 .DS_Store
