@@ -213,6 +213,20 @@ woven_logits = 0.7 * poetry_logits + 0.3 * technology_logits
 
 The result is not just one model generating text. It is several small models contributing to the next token.
 
+## Example Output
+
+Poetry specialist only:
+> "The city at night breathes slow, each lamp a word
+> the darkness reads and folds into its keeping."
+
+Technology specialist only:
+> "The city at night runs distributed processes across
+> nodes, latency rising as packet loss compounds at scale."
+
+Woven 70% poetry / 30% technology:
+> "The city at night holds its network close, each signal
+> a quiet pulse the infrastructure learns to trust."
+
 ### Weaving Command
 
 ```bash
@@ -482,67 +496,9 @@ For experiments:
 
 Use clean, consistent data. Remove broken HTML, duplicated lines, unrelated text, and noisy formatting when possible.
 
-## Roadmap
-
-Completed:
-
-- Custom dataset preparation
-- Byte tokenizer
-- GPT training from scratch
-- Early stopping
-- Training history CSV
-- Generation presets
-- Weighted Model Weaving CLI
-- Token influence trace export
-
-Next:
-
-- Streamlit dashboard
-- Loss charts
-- Specialist sliders
-- Colored token influence visualization
-- BPE tokenizer experiments
-- Research evaluation suite
-
-Future dashboard concept:
-
 ```text
 Datasets -> Train -> Generate -> Weave -> Metrics
 ```
 
 The long-term vision is a local LOOM Studio interface where users train specialists, move sliders, generate text, and see which specialist influenced each token.
 
-## Development Workflow
-
-Run tests:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-Compile check:
-
-```bash
-python -m compileall -q loom.py train.py generate.py weave.py src tests
-```
-
-Before pushing:
-
-```bash
-git status
-git diff --stat
-```
-
-Do not commit:
-
-- `.venv/`
-- `out/`
-- `data/loom/`
-- personal datasets
-- `.pt` checkpoints
-
-These are ignored by default.
-
-## License
-
-Add a license before using this as a public release project.
