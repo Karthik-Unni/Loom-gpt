@@ -27,6 +27,7 @@ The first usable milestone lets you:
 - Resume interrupted training runs.
 - Use reproducible random seeds and generation presets.
 - Generate text from a trained checkpoint.
+- Blend compatible specialist checkpoints with `loom weave`.
 
 ## Quick Start
 
@@ -77,6 +78,18 @@ Generate text:
 
 ```bash
 loom generate --checkpoint out/notes/best_model.pt --prompt "Today I learned" --preset precise
+```
+
+Blend two or more specialist checkpoints:
+
+```bash
+loom weave \
+  --model poetry=out/poetry/best_model.pt \
+  --model technology=out/technology/best_model.pt \
+  --weight poetry=0.7 \
+  --weight technology=0.3 \
+  --prompt "The city at night" \
+  --trace-out out/weaving/city-trace.json
 ```
 
 You can also run commands without installing the CLI:
@@ -189,10 +202,10 @@ generate.py          Text generation
 tests/               Lightweight tests
 ```
 
-## Roadmap: Model Weaving
+## Model Weaving
 
-The signature feature planned for LOOM Studio is **Model Weaving**: train small
-specialists on different datasets and blend their influence during generation.
+The signature feature is **Model Weaving**: train small specialists on different
+datasets and blend their influence during generation.
 
 ```text
 poetry expert      70% --\
@@ -203,11 +216,18 @@ code expert         0% --/
 Planned milestones:
 
 - Add a web dashboard with dataset stats, loss charts, and generation controls.
-- Train separate domain specialists.
-- Blend specialists with manual sliders.
+- Train separate domain specialists. Current CLI support is available through `loom weave`.
+- Blend specialists with manual weights.
 - Visualize each specialist's influence token by token.
 - Compare manual blending against a learned router.
 - Evaluate domain interference, model size, memory use, and generation quality.
+
+Current weaving constraints:
+
+- Specialists must use the default byte tokenizer.
+- Specialists must have the same architecture.
+- Legacy character-tokenizer checkpoints are not supported for weaving.
+- The optional JSON trace records which specialist most influenced each generated token.
 
 ## Development Workflow
 

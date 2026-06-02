@@ -69,6 +69,26 @@ def generate(args) -> None:
     _run('generate.py', forwarded)
 
 
+def weave(args) -> None:
+    forwarded = []
+    for model in args.model:
+        forwarded.extend(['--model', model])
+    for weight in args.weight:
+        forwarded.extend(['--weight', weight])
+    forwarded.extend([
+        '--prompt', args.prompt,
+        '--tokens', str(args.tokens),
+        '--preset', args.preset,
+    ])
+    if args.temperature is not None:
+        forwarded.extend(['--temperature', str(args.temperature)])
+    if args.top_k is not None:
+        forwarded.extend(['--top-k', str(args.top_k)])
+    if args.trace_out:
+        forwarded.extend(['--trace-out', args.trace_out])
+    _run('weave.py', forwarded)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='loom', description='Train tiny GPT models on your own text.')
     commands = parser.add_subparsers(dest='command', required=True)
@@ -107,6 +127,17 @@ def build_parser() -> argparse.ArgumentParser:
     generate_parser.add_argument('--temperature', type=float)
     generate_parser.add_argument('--top-k', dest='top_k', type=int)
     generate_parser.set_defaults(func=generate)
+
+    weave_parser = commands.add_parser('weave', help='Blend compatible specialist checkpoints.')
+    weave_parser.add_argument('--model', action='append', required=True, help='Specialist checkpoint as name=path.')
+    weave_parser.add_argument('--weight', action='append', default=[], help='Specialist weight as name=value.')
+    weave_parser.add_argument('--prompt', default='')
+    weave_parser.add_argument('--tokens', type=int, default=300)
+    weave_parser.add_argument('--preset', choices=['precise', 'balanced', 'creative'], default='balanced')
+    weave_parser.add_argument('--temperature', type=float)
+    weave_parser.add_argument('--top-k', dest='top_k', type=int)
+    weave_parser.add_argument('--trace-out', help='Write token influence trace JSON.')
+    weave_parser.set_defaults(func=weave)
 
     return parser
 
