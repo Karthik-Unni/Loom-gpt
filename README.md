@@ -502,3 +502,6 @@ Datasets -> Train -> Generate -> Weave -> Metrics
 
 The long-term vision is a local LOOM Studio interface where users train specialists, move sliders, generate text, and see which specialist influenced each token.
 
+
+This is still an expirimental grade project!
+
