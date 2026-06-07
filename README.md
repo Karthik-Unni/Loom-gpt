@@ -8,6 +8,12 @@ It started as a from-scratch PyTorch implementation inspired by Andrej Karpathy'
 
 LOOM-GPT is not a ChatGPT replacement. It does not use a giant pretrained model. Instead, it gives you a readable, hackable, local system for training tiny domain-specific transformers and studying how they behave.
 
+LOOM-GPT is now available on PyPI. Train small specialist GPT-style transformers on your own datasets, generate text locally, and experiment with LOOM's signature Model Weaving feature to blend multiple specialist models together. Install with:
+``` bash
+pip install loom-gpt==0.1.0
+loom --help
+```
+
 ## What This Project Does
 
 LOOM-GPT lets you:
